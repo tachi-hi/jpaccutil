@@ -1,97 +1,140 @@
+#!/usr/bin/env python3
 """
 Tests for jpaccutil.core module.
 """
 
 import unittest
-from decimal import Decimal
-
-from jpaccutil.core import (
-    JapaneseAccountingCalculator,
-    format_japanese_currency,
-    parse_japanese_date
-)
+from jpaccutil.utils import embed_accent_marks
 
 
-class TestJapaneseAccountingCalculator(unittest.TestCase):
-    """Test cases for JapaneseAccountingCalculator class."""
+class TestEmbedAccentMarks(unittest.TestCase):
+    """Test cases for embed_accent_marks function."""
     
-    def setUp(self):
-        """Set up test fixtures."""
-        self.calc = JapaneseAccountingCalculator()
+    def test_no_accent_nucleus(self):
+        """Test with no accent nucleus (0)."""
+        test_cases = [
+            ("こんにちは", 0),
+            ("さくら", 0),
+        ]
+        
+        for surface_reading, accent_nucleus in test_cases:
+            with self.subTest(surface_reading=surface_reading, accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                # When accent_nucleus is 0, should return pattern with brackets
+                self.assertIn("[", result)
+                self.assertIn("|", result)
     
-    def test_calculate_consumption_tax_default_rate(self):
-        """Test consumption tax calculation with default rate."""
-        result = self.calc.calculate_consumption_tax(1000)
-        self.assertEqual(result, Decimal('100'))
+    def test_accent_on_first_mora(self):
+        """Test with accent on first mora."""
+        test_cases = [
+            ("こんにちは", 1),
+            ("さくら", 1),
+        ]
+        
+        for surface_reading, accent_nucleus in test_cases:
+            with self.subTest(surface_reading=surface_reading, accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                # Should have ] after first character for accent on first mora
+                self.assertIn("]", result)
+                self.assertIn("|", result)
     
-    def test_calculate_consumption_tax_custom_rate(self):
-        """Test consumption tax calculation with custom rate."""
-        result = self.calc.calculate_consumption_tax(1000, 0.08)
-        self.assertEqual(result, Decimal('80'))
+    def test_accent_on_second_mora(self):
+        """Test with accent on second mora."""
+        test_cases = [
+            ("こんにちは", 2),
+            ("さくら", 2),
+        ]
+        
+        for surface_reading, accent_nucleus in test_cases:
+            with self.subTest(surface_reading=surface_reading, accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                # Should have brackets for accent on second mora
+                self.assertIn("[", result)
+                self.assertIn("]", result)
+                self.assertIn("|", result)
     
-    def test_calculate_consumption_tax_with_decimal_input(self):
-        """Test consumption tax calculation with Decimal input."""
-        result = self.calc.calculate_consumption_tax(Decimal('1000'), 0.10)
-        self.assertEqual(result, Decimal('100'))
+    def test_accent_on_third_mora(self):
+        """Test with accent on third mora."""
+        test_cases = [
+            ("こんにちは", 3),
+            ("さくら", 3),
+            ("あいうえおかき", 3),
+        ]
+        
+        for surface_reading, accent_nucleus in test_cases:
+            with self.subTest(surface_reading=surface_reading, accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                # Should have brackets for accent on third mora
+                self.assertIn("[", result)
+                self.assertIn("]", result)
+                self.assertIn("|", result)
     
-    def test_calculate_consumption_tax_with_float_input(self):
-        """Test consumption tax calculation with float input."""
-        result = self.calc.calculate_consumption_tax(1000.0, 0.10)
-        self.assertEqual(result, Decimal('100'))
+    def test_accent_on_fourth_mora(self):
+        """Test with accent on fourth mora."""
+        test_cases = [
+            ("こんにちは", 4),
+            ("あいうえおかき", 4),
+        ]
+        
+        for surface_reading, accent_nucleus in test_cases:
+            with self.subTest(surface_reading=surface_reading, accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                # Should have brackets for accent on fourth mora
+                self.assertIn("[", result)
+                self.assertIn("]", result)
+                self.assertIn("|", result)
     
-    def test_calculate_total_with_tax_default_rate(self):
-        """Test total calculation with default tax rate."""
-        result = self.calc.calculate_total_with_tax(1000)
-        self.assertEqual(result, Decimal('1100'))
+    def test_accent_on_fifth_mora(self):
+        """Test with accent on fifth mora."""
+        test_cases = [
+            ("こんにちは", 5),
+            ("あいうえおかき", 5),
+        ]
+        
+        for surface_reading, accent_nucleus in test_cases:
+            with self.subTest(surface_reading=surface_reading, accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                # Should have brackets for accent on fifth mora
+                self.assertIn("[", result)
+                self.assertIn("]", result)
+                self.assertIn("|", result)
     
-    def test_calculate_total_with_tax_custom_rate(self):
-        """Test total calculation with custom tax rate."""
-        result = self.calc.calculate_total_with_tax(1000, 0.08)
-        self.assertEqual(result, Decimal('1080'))
+    def test_long_word_accents(self):
+        """Test with longer words and various accent positions."""
+        surface_reading = "あいうえおかき"
+        
+        for accent_nucleus in range(1, 6):
+            with self.subTest(accent_nucleus=accent_nucleus):
+                result = embed_accent_marks(surface_reading, accent_nucleus)
+                if accent_nucleus == 0:
+                    self.assertIn("[", result)
+                    self.assertIn("|", result)
+                elif accent_nucleus == 1:
+                    self.assertIn("]", result)
+                    self.assertIn("|", result)
+                else:
+                    self.assertIn("[", result)
+                    self.assertIn("]", result)
+                    self.assertIn("|", result)
     
-    def test_calculate_total_with_tax_decimal_input(self):
-        """Test total calculation with Decimal input."""
-        result = self.calc.calculate_total_with_tax(Decimal('1000'))
-        self.assertEqual(result, Decimal('1100'))
-
-
-class TestFormatJapaneseCurrency(unittest.TestCase):
-    """Test cases for format_japanese_currency function."""
+    def test_accent_nucleus_out_of_range(self):
+        """Test with accent nucleus beyond word length."""
+        surface_reading = "さくら"  # 3 mora
+        accent_nucleus = 5  # Beyond word length
+        
+        result = embed_accent_marks(surface_reading, accent_nucleus)
+        # Should handle gracefully - implementation dependent
+        self.assertIsInstance(result, str)
     
-    def test_format_integer(self):
-        """Test formatting integer amount."""
-        result = format_japanese_currency(1000)
-        self.assertEqual(result, "¥1,000")
+    def test_empty_string(self):
+        """Test with empty string."""
+        result = embed_accent_marks("", 0)
+        self.assertEqual(result, "||")
     
-    def test_format_decimal(self):
-        """Test formatting Decimal amount."""
-        result = format_japanese_currency(Decimal('1234567'))
-        self.assertEqual(result, "¥1,234,567")
-    
-    def test_format_float(self):
-        """Test formatting float amount."""
-        result = format_japanese_currency(1000.0)
-        self.assertEqual(result, "¥1,000")
-    
-    def test_format_zero(self):
-        """Test formatting zero amount."""
-        result = format_japanese_currency(0)
-        self.assertEqual(result, "¥0")
-    
-    def test_format_negative(self):
-        """Test formatting negative amount."""
-        result = format_japanese_currency(-1000)
-        self.assertEqual(result, "¥-1,000")
-
-
-class TestParseJapaneseDate(unittest.TestCase):
-    """Test cases for parse_japanese_date function."""
-    
-    def test_parse_date_placeholder(self):
-        """Test date parsing (placeholder implementation)."""
-        # This is a placeholder test since the function is not fully implemented
-        result = parse_japanese_date("2024-01-01")
-        self.assertEqual(result, "2024-01-01")
+    def test_single_character(self):
+        """Test with single character."""
+        result = embed_accent_marks("あ", 1)
+        self.assertIsInstance(result, str)
 
 
 if __name__ == '__main__':

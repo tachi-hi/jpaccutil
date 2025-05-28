@@ -104,41 +104,9 @@ def count_mora(text: str) -> int:
         >>> count_mora("きょう")  # きょ + う = 2 mora
         2
     """
-    if jamorasep is not None:
-        # Use jamorasep for accurate mora counting
-        morae = jamorasep.split_morae(text)
-        return len(morae)
-    else:
-        # Fallback to manual counting
-        # Remove accent marks first
-        clean_text = re.sub(r'[\[\]\|]', '', text)
-        
-        mora_count = 0
-        i = 0
-        
-        while i < len(clean_text):
-            char = clean_text[i]
-            
-            # Check if current character is a Japanese character
-            if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
-                # Check for small characters (っ, ゃ, ゅ, ょ, etc.)
-                if char in 'っッゃゅょャュョぁぃぅぇぉァィゥェォ':
-                    # Small characters don't count as separate mora
-                    # but combine with the previous character
-                    pass
-                else:
-                    mora_count += 1
-                    
-                    # Check if next character is a small character
-                    if i + 1 < len(clean_text):
-                        next_char = clean_text[i + 1]
-                        if next_char in 'ゃゅょャュョ':
-                            # Skip the small character as it's part of this mora
-                            i += 1
-            
-            i += 1
-        
-        return mora_count
+    # Use our own mora splitting function
+    morae = split_into_mora(text)
+    return len(morae)
 
 
 def split_into_mora(text: str) -> List[str]:
@@ -157,38 +125,40 @@ def split_into_mora(text: str) -> List[str]:
         >>> split_into_mora("きょう")
         ["きょ", "う"]
     """
-    if jamorasep is not None:
-        # Use jamorasep for accurate mora splitting
-        return jamorasep.split_morae(text)
-    else:
-        # Fallback to manual splitting
-        # Remove accent marks first
-        clean_text = re.sub(r'[\[\]\|]', '', text)
+    # Use manual splitting for now as jamorasep.parse doesn't work as expected
+    # if jamorasep is not None:
+    #     # Use jamorasep for accurate mora splitting
+    #     return jamorasep.parse(text)
+    # else:
+    #     # Fallback to manual splitting
+    
+    # Remove accent marks first
+    clean_text = re.sub(r'[\[\]\|]', '', text)
+    
+    mora_list = []
+    i = 0
+    
+    while i < len(clean_text):
+        char = clean_text[i]
         
-        mora_list = []
-        i = 0
-        
-        while i < len(clean_text):
-            char = clean_text[i]
+        if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
+            current_mora = char
             
-            if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
-                current_mora = char
-                
-                # Check if next character is a small character
-                if i + 1 < len(clean_text):
-                    next_char = clean_text[i + 1]
-                    if next_char in 'ゃゅょャュョ':
-                        current_mora += next_char
-                        i += 1
-                
-                mora_list.append(current_mora)
-            else:
-                # Non-Japanese character, add as is
-                mora_list.append(char)
+            # Check if next character is a small character
+            if i + 1 < len(clean_text):
+                next_char = clean_text[i + 1]
+                if next_char in 'ゃゅょャュョ':
+                    current_mora += next_char
+                    i += 1
             
-            i += 1
+            mora_list.append(current_mora)
+        else:
+            # Non-Japanese character, add as is
+            mora_list.append(char)
         
-        return mora_list
+        i += 1
+    
+    return mora_list
 
 
 def embed_accent_marks(surface_reading: str, accent_nucleus: int) -> str:
@@ -212,12 +182,8 @@ def embed_accent_marks(surface_reading: str, accent_nucleus: int) -> str:
         >>> embed_accent_marks("こんにちは", 3)
         "|*[**]**|"
     """
-    if jamorasep is not None:
-        # Use jamorasep for accurate mora splitting
-        morae = jamorasep.split_morae(surface_reading)
-    else:
-        # Fallback to manual splitting
-        morae = split_into_mora(surface_reading)
+    # Use our own mora splitting function
+    morae = split_into_mora(surface_reading)
     
     if not morae:
         return "|" + surface_reading + "|"

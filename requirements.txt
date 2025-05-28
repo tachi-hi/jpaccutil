@@ -1,2 +1,2 @@
 # Production dependencies
-jamorasep>=0.1.0
+jamorasep
