@@ -7,10 +7,7 @@ including implementation of Niosaka rules and accent mark insertion.
 
 from typing import List, Dict, Optional, Tuple, Union
 import re
-try:
-    import jamorasep
-except ImportError:
-    jamorasep = None
+import jamorasep
 
 
 class JapaneseAccentProcessor:
@@ -32,11 +29,7 @@ class JapaneseAccentProcessor:
         
         # Initialize basic accent patterns (to be expanded with Niosaka rules)
         self.accent_patterns = {}
-        
-        # Check if jamorasep is available
-        if jamorasep is None:
-            raise ImportError("jamorasep library is required. Install it with: pip install jamorasep")
-    
+            
     def apply_niosaka_rules(
         self, 
         text: str, 
