@@ -117,3 +117,12 @@ The package provides utilities for automatic accent mark insertion in Japanese t
 
 ## Domain Knowledge
 - 匂坂 reads Sagisaka
+- accent nucleus
+    - 0 :   |x[xxxxxxxx|
+    - 1 :   |x]xxxxxxxx|
+    - 2 :   |x[x]xxxxxx|
+    - 3 :   |x[xx]xxxxx|
+    - 4 :   |x[xxx]xxxx|
+    - 5 :   |x[xxxx]xxx|
+    - n-1 : |x[xxxxxxx]|
+    
