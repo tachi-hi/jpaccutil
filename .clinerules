@@ -1,0 +1,119 @@
+# jpaccutil - Japanese Accent Processing Utility
+# Cline Rules for Development Guidelines
+
+## Project Overview
+This is a Python package for Japanese accent processing that implements Sagisaka rules.
+The package provides utilities for automatic accent mark insertion in Japanese text.
+
+## Core Functionality
+- Main logic is in jpaccutil/core.py (JapaneseAccentProcessor class)
+- Utility functions in jpaccutil/utils.py
+- CLI interface in jpaccutil/cli.py
+- Uses jamorasep library for mora splitting
+
+## Development Guidelines
+
+### Code Style
+- Follow PEP 8 Python style guidelines
+- Use type hints for all function parameters and return values
+- Include comprehensive docstrings with examples
+- Use black for code formatting
+- Use flake8 for linting
+- Use mypy for type checking
+
+### Testing
+- All new features must include unit tests in tests/ directory
+- Use pytest for testing framework
+- Maintain test coverage above 80%
+- Test files should follow naming convention: test_*.py
+
+### Dependencies
+- Core dependency: jamorasep (for mora splitting)
+- Development dependencies in requirements-dev.txt
+- Keep dependencies minimal and well-justified
+
+### File Structure Rules
+- Keep core logic in jpaccutil/core.py
+- Utility functions go in jpaccutil/utils.py
+- CLI interface in jpaccutil/cli.py
+- Tests in tests/ directory with corresponding test_*.py files
+- Documentation examples should be runnable
+
+### Japanese Text Processing
+- Always validate Japanese text input using validate_japanese_text()
+- Handle hiragana, katakana, and kanji appropriately
+- Use jamorasep for accurate mora splitting
+- Preserve original text structure when adding accent marks
+
+### Accent Mark Conventions
+- Use '[' for rising tone (rise)
+- Use ']' for falling tone (fall)
+- Use '|' for accent phrase boundary
+- Maintain consistency in accent notation throughout
+
+### Error Handling
+- Gracefully handle missing jamorasep dependency
+- Validate input parameters before processing
+- Provide meaningful error messages for invalid input
+- Handle edge cases (empty strings, non-Japanese text)
+
+### Documentation
+- Update README.md for any new features
+- Include usage examples in docstrings
+- Maintain changelog for version updates
+- Document any new accent notation formats
+
+### Version Control
+- Use semantic versioning (MAJOR.MINOR.PATCH)
+- Update version in setup.py and __init__.py
+- Tag releases appropriately
+- Write clear commit messages
+
+### Performance Considerations
+- Optimize for common use cases (short to medium Japanese text)
+- Cache accent patterns when appropriate
+- Minimize memory usage for large text processing
+- Profile performance-critical functions
+
+### Compatibility
+- Support Python 3.7+
+- Ensure cross-platform compatibility
+- Handle different Japanese text encodings properly
+- Test on multiple Python versions
+
+## Specific Implementation Notes
+
+### Sagisaka Rules Implementation
+- Implement actual Sagisaka rules in apply_sagisaka_rules()
+- Current implementation is placeholder - needs linguistic research
+- Consider word boundaries and part-of-speech information
+- Handle compound words appropriately
+
+### CLI Interface
+- Provide batch processing capabilities
+- Support multiple input/output formats
+- Include verbose and quiet modes
+- Handle file encoding properly
+
+### API Design
+- Keep public API simple and intuitive
+- Provide both high-level and low-level interfaces
+- Maintain backward compatibility
+- Use clear parameter names
+
+## Before Making Changes
+1. Read existing code to understand current patterns
+2. Check if similar functionality already exists
+3. Consider impact on existing API
+4. Write tests before implementing features
+5. Update documentation as needed
+
+## Common Patterns
+- Use List[str] for mora sequences
+- Use Tuple[int, str] for accent positions
+- Validate input with validate_japanese_text()
+- Handle ImportError for optional dependencies
+- Include usage examples in docstrings
+
+## Domain Knowledge
+- 匂坂 reads Sagisaka

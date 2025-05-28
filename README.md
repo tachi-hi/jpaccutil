@@ -4,11 +4,11 @@ A utility package for Japanese accent processing.
 
 ## Description
 
-jpaccutil is a Python package designed to provide utilities for Japanese accent processing. This package implements the Niosaka rules (匂坂規則) to automatically add accent marks to Japanese text.
+jpaccutil is a Python package designed to provide utilities for Japanese accent processing. This package implements the Sagisaka rules (匂坂規則) to automatically add accent marks to Japanese text.
 
 ## Features
 
-- Implementation of Niosaka rules for Japanese accent processing
+- Implementation of Sagisaka rules for Japanese accent processing
 - Automatic accent mark insertion
 - Support for various Japanese text formats (hiragana, katakana, kanji readings)
 - Command-line interface for batch processing
