@@ -80,7 +80,7 @@ from jpaccutil import JapaneseAccentProcessor
 processor = JapaneseAccentProcessor()
 
 # Apply Sagisaka rules (placeholder implementation)
-result = processor.apply_niosaka_rules("こんにちは")
+result = processor.apply_sagisaka_rules("こんにちは")
 print(result)
 
 # Add accent marks at specific positions
