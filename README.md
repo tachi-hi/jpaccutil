@@ -32,11 +32,35 @@ pip install -e .
 
 ## Usage
 
+### Basic Accent Mark Embedding
+
 ```python
 import jpaccutil
 
-# Example usage (to be implemented)
-# result = jpaccutil.some_function()
+# Embed accent marks based on accent nucleus position
+result = jpaccutil.embed_accent_marks("こんにちは", 0)  # No accent nucleus
+print(result)  # |こ[んにちは|
+
+result = jpaccutil.embed_accent_marks("こんにちは", 1)  # Accent on first mora
+print(result)  # |こ]んにちは|
+
+result = jpaccutil.embed_accent_marks("こんにちは", 2)  # Accent on second mora
+print(result)  # |こ[ん]にちは|
+
+result = jpaccutil.embed_accent_marks("こんにちは", 3)  # Accent on third mora
+print(result)  # |こん[に]ちは|
+```
+
+### Using jamorasep for Mora Splitting
+
+```python
+# Split text into morae using jamorasep library
+morae = jpaccutil.split_into_mora("こんにちは")
+print(morae)  # ['こ', 'ん', 'に', 'ち', 'は']
+
+# Count morae
+count = jpaccutil.count_mora("こんにちは")
+print(count)  # 5
 ```
 
 ## Development

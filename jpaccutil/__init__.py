@@ -22,10 +22,10 @@ from .utils import (
     convert_hiragana_to_katakana,
     count_mora,
     split_into_mora,
+    embed_accent_marks,
     is_long_vowel,
     get_vowel_sound,
-    extract_accent_info,
-    validate_accent_pattern
+    extract_accent_info
 )
 
 __all__ = [
@@ -40,8 +40,8 @@ __all__ = [
     "convert_hiragana_to_katakana",
     "count_mora",
     "split_into_mora",
+    "embed_accent_marks",
     "is_long_vowel",
     "get_vowel_sound",
     "extract_accent_info",
-    "validate_accent_pattern",
 ]

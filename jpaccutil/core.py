@@ -7,6 +7,10 @@ including implementation of Niosaka rules and accent mark insertion.
 
 from typing import List, Dict, Optional, Tuple, Union
 import re
+try:
+    import jamorasep
+except ImportError:
+    jamorasep = None
 
 
 class JapaneseAccentProcessor:
@@ -21,14 +25,17 @@ class JapaneseAccentProcessor:
         """Initialize the accent processor."""
         # Accent mark symbols
         self.accent_marks = {
-            'high': '́',  # High tone mark (combining acute accent)
-            'low': '̀',   # Low tone mark (combining grave accent)
-            'fall': '̂',  # Falling tone mark (combining circumflex)
-            'rise': '̌'   # Rising tone mark (combining caron)
+            'rise': '[',    # Rising tone mark
+            'fall': ']',    # Falling tone mark
+            'boundary': '|' # Accent phrase boundary
         }
         
         # Initialize basic accent patterns (to be expanded with Niosaka rules)
         self.accent_patterns = {}
+        
+        # Check if jamorasep is available
+        if jamorasep is None:
+            raise ImportError("jamorasep library is required. Install it with: pip install jamorasep")
     
     def apply_niosaka_rules(
         self, 
@@ -49,17 +56,22 @@ class JapaneseAccentProcessor:
         Example:
             >>> processor = JapaneseAccentProcessor()
             >>> processor.apply_niosaka_rules("こんにちは")
-            "こ́んにちは"
+            "こ[んにちは"
         """
         if not text:
             return text
         
-        # Placeholder implementation - to be replaced with actual Niosaka rules
-        # This is a basic example that adds accent to the first mora
-        if len(text) > 0:
-            return text[0] + self.accent_marks['high'] + text[1:]
+        # Use jamorasep to split into morae first
+        morae = self.split_into_morae(text)
         
-        return text
+        if not morae:
+            return text
+        
+        # Placeholder implementation - to be replaced with actual Niosaka rules
+        # This is a basic example that adds rise accent to the first mora
+        accent_positions = [(0, 'rise')]
+        
+        return self.add_accent_to_morae(morae, accent_positions)
     
     def add_accent_marks(
         self, 
@@ -78,8 +90,8 @@ class JapaneseAccentProcessor:
             
         Example:
             >>> processor = JapaneseAccentProcessor()
-            >>> processor.add_accent_marks("こんにちは", [(0, 'high'), (3, 'low')])
-            "こ́んにち̀は"
+            >>> processor.add_accent_marks("こんにちは", [(0, 'rise'), (3, 'fall')])
+            "こ[んにち]は"
         """
         if not accent_positions:
             return text
@@ -109,12 +121,13 @@ class JapaneseAccentProcessor:
             This is a placeholder implementation.
             Actual implementation will depend on specific Niosaka rules.
         """
-        # Placeholder implementation
+        # Use jamorasep to split into morae first
+        morae = self.split_into_morae(text)
         positions = []
         
-        # Simple rule: accent on first mora if text length > 2
-        if len(text) > 2:
-            positions.append((0, 'high'))
+        # Simple rule: rise accent on first mora if more than 2 morae
+        if len(morae) > 2:
+            positions.append((0, 'rise'))
         
         return positions
     
@@ -130,12 +143,70 @@ class JapaneseAccentProcessor:
             
         Example:
             >>> processor = JapaneseAccentProcessor()
-            >>> processor.remove_accent_marks("こ́んにち̀は")
+            >>> processor.remove_accent_marks("こ[んにち]は")
             "こんにちは"
         """
-        # Remove all combining accent marks
-        accent_pattern = r'[́̀̂̌]'
+        # Remove all accent marks
+        accent_pattern = r'[\[\]\|]'
         return re.sub(accent_pattern, '', text)
+    
+    def split_into_morae(self, text: str) -> List[str]:
+        """
+        Split Japanese text into morae using jamorasep.
+        
+        Args:
+            text: Japanese text to split
+            
+        Returns:
+            List of morae
+            
+        Example:
+            >>> processor = JapaneseAccentProcessor()
+            >>> processor.split_into_morae("こんにちは")
+            ['こ', 'ん', 'に', 'ち', 'は']
+        """
+        if not text:
+            return []
+        
+        # Use jamorasep to split into morae
+        morae = jamorasep.split_morae(text)
+        return morae
+    
+    def add_accent_to_morae(
+        self, 
+        morae: List[str], 
+        accent_positions: List[Tuple[int, str]]
+    ) -> str:
+        """
+        Add accent marks to specific morae positions.
+        
+        Args:
+            morae: List of morae
+            accent_positions: List of (mora_index, accent_type) tuples
+            
+        Returns:
+            Text with accent marks applied to morae
+            
+        Example:
+            >>> processor = JapaneseAccentProcessor()
+            >>> morae = ['こ', 'ん', 'に', 'ち', 'は']
+            >>> processor.add_accent_to_morae(morae, [(0, 'rise'), (3, 'fall')])
+            "こ[んにち]は"
+        """
+        if not morae or not accent_positions:
+            return ''.join(morae)
+        
+        result = morae.copy()
+        
+        # Sort positions in reverse order to avoid index shifting
+        sorted_positions = sorted(accent_positions, key=lambda x: x[0], reverse=True)
+        
+        for position, accent_type in sorted_positions:
+            if 0 <= position < len(result) and accent_type in self.accent_marks:
+                # Insert accent mark after the mora
+                result.insert(position + 1, self.accent_marks[accent_type])
+        
+        return ''.join(result)
 
 
 def parse_accent_notation(notation: str) -> List[Tuple[int, str]]:
@@ -143,23 +214,23 @@ def parse_accent_notation(notation: str) -> List[Tuple[int, str]]:
     Parse accent notation string into position and type information.
     
     Args:
-        notation: Accent notation string (e.g., "1H,3L" for high at 1, low at 3)
+        notation: Accent notation string (e.g., "1R,3F" for rise at 1, fall at 3)
         
     Returns:
         List of (position, accent_type) tuples
         
     Example:
-        >>> parse_accent_notation("1H,3L")
-        [(1, 'high'), (3, 'low')]
+        >>> parse_accent_notation("1R,3F")
+        [(1, 'rise'), (3, 'fall')]
     """
     positions = []
     
     if not notation:
         return positions
     
-    # Parse notation like "1H,3L,5F"
+    # Parse notation like "1R,3F,5B"
     parts = notation.split(',')
-    accent_map = {'H': 'high', 'L': 'low', 'F': 'fall', 'R': 'rise'}
+    accent_map = {'R': 'rise', 'F': 'fall', 'B': 'boundary'}
     
     for part in parts:
         part = part.strip()
@@ -186,13 +257,13 @@ def format_accent_notation(positions: List[Tuple[int, str]]) -> str:
         Formatted notation string
         
     Example:
-        >>> format_accent_notation([(1, 'high'), (3, 'low')])
-        "1H,3L"
+        >>> format_accent_notation([(1, 'rise'), (3, 'fall')])
+        "1R,3F"
     """
     if not positions:
         return ""
     
-    accent_map = {'high': 'H', 'low': 'L', 'fall': 'F', 'rise': 'R'}
+    accent_map = {'rise': 'R', 'fall': 'F', 'boundary': 'B'}
     
     notation_parts = []
     for position, accent_type in sorted(positions):

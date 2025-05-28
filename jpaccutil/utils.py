@@ -7,6 +7,10 @@ This module contains helper functions and utilities for Japanese accent processi
 import re
 from typing import List, Dict, Any, Optional, Tuple
 import unicodedata
+try:
+    import jamorasep
+except ImportError:
+    jamorasep = None
 
 
 def normalize_japanese_text(text: str) -> str:
@@ -86,7 +90,7 @@ def convert_hiragana_to_katakana(text: str) -> str:
 
 def count_mora(text: str) -> int:
     """
-    Count the number of mora in Japanese text.
+    Count the number of mora in Japanese text using jamorasep.
     
     Args:
         text: Japanese text
@@ -100,40 +104,46 @@ def count_mora(text: str) -> int:
         >>> count_mora("きょう")  # きょ + う = 2 mora
         2
     """
-    # Remove accent marks first
-    clean_text = re.sub(r'[́̀̂̌]', '', text)
-    
-    mora_count = 0
-    i = 0
-    
-    while i < len(clean_text):
-        char = clean_text[i]
+    if jamorasep is not None:
+        # Use jamorasep for accurate mora counting
+        morae = jamorasep.split_morae(text)
+        return len(morae)
+    else:
+        # Fallback to manual counting
+        # Remove accent marks first
+        clean_text = re.sub(r'[\[\]\|]', '', text)
         
-        # Check if current character is a Japanese character
-        if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
-            # Check for small characters (っ, ゃ, ゅ, ょ, etc.)
-            if char in 'っッゃゅょャュョぁぃぅぇぉァィゥェォ':
-                # Small characters don't count as separate mora
-                # but combine with the previous character
-                pass
-            else:
-                mora_count += 1
-                
-                # Check if next character is a small character
-                if i + 1 < len(clean_text):
-                    next_char = clean_text[i + 1]
-                    if next_char in 'ゃゅょャュョ':
-                        # Skip the small character as it's part of this mora
-                        i += 1
+        mora_count = 0
+        i = 0
         
-        i += 1
-    
-    return mora_count
+        while i < len(clean_text):
+            char = clean_text[i]
+            
+            # Check if current character is a Japanese character
+            if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
+                # Check for small characters (っ, ゃ, ゅ, ょ, etc.)
+                if char in 'っッゃゅょャュョぁぃぅぇぉァィゥェォ':
+                    # Small characters don't count as separate mora
+                    # but combine with the previous character
+                    pass
+                else:
+                    mora_count += 1
+                    
+                    # Check if next character is a small character
+                    if i + 1 < len(clean_text):
+                        next_char = clean_text[i + 1]
+                        if next_char in 'ゃゅょャュョ':
+                            # Skip the small character as it's part of this mora
+                            i += 1
+            
+            i += 1
+        
+        return mora_count
 
 
 def split_into_mora(text: str) -> List[str]:
     """
-    Split Japanese text into individual mora.
+    Split Japanese text into individual mora using jamorasep.
     
     Args:
         text: Japanese text
@@ -147,33 +157,96 @@ def split_into_mora(text: str) -> List[str]:
         >>> split_into_mora("きょう")
         ["きょ", "う"]
     """
-    # Remove accent marks first
-    clean_text = re.sub(r'[́̀̂̌]', '', text)
-    
-    mora_list = []
-    i = 0
-    
-    while i < len(clean_text):
-        char = clean_text[i]
+    if jamorasep is not None:
+        # Use jamorasep for accurate mora splitting
+        return jamorasep.split_morae(text)
+    else:
+        # Fallback to manual splitting
+        # Remove accent marks first
+        clean_text = re.sub(r'[\[\]\|]', '', text)
         
-        if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
-            current_mora = char
-            
-            # Check if next character is a small character
-            if i + 1 < len(clean_text):
-                next_char = clean_text[i + 1]
-                if next_char in 'ゃゅょャュョ':
-                    current_mora += next_char
-                    i += 1
-            
-            mora_list.append(current_mora)
-        else:
-            # Non-Japanese character, add as is
-            mora_list.append(char)
+        mora_list = []
+        i = 0
         
-        i += 1
+        while i < len(clean_text):
+            char = clean_text[i]
+            
+            if re.match(r'[\u3040-\u309F\u30A0-\u30FF]', char):
+                current_mora = char
+                
+                # Check if next character is a small character
+                if i + 1 < len(clean_text):
+                    next_char = clean_text[i + 1]
+                    if next_char in 'ゃゅょャュョ':
+                        current_mora += next_char
+                        i += 1
+                
+                mora_list.append(current_mora)
+            else:
+                # Non-Japanese character, add as is
+                mora_list.append(char)
+            
+            i += 1
+        
+        return mora_list
+
+
+def embed_accent_marks(surface_reading: str, accent_nucleus: int) -> str:
+    """
+    Embed accent marks into surface reading based on accent nucleus position.
     
-    return mora_list
+    Args:
+        surface_reading: Surface reading in hiragana/katakana
+        accent_nucleus: Accent nucleus position (0-based, 0 means no accent nucleus)
+        
+    Returns:
+        Text with embedded accent marks
+        
+    Examples:
+        >>> embed_accent_marks("こんにちは", 0)
+        "|*[****|"
+        >>> embed_accent_marks("こんにちは", 1)
+        "|*]****|"
+        >>> embed_accent_marks("こんにちは", 2)
+        "|*[*]***|"
+        >>> embed_accent_marks("こんにちは", 3)
+        "|*[**]**|"
+    """
+    if jamorasep is not None:
+        # Use jamorasep for accurate mora splitting
+        morae = jamorasep.split_morae(surface_reading)
+    else:
+        # Fallback to manual splitting
+        morae = split_into_mora(surface_reading)
+    
+    if not morae:
+        return "|" + surface_reading + "|"
+    
+    mora_count = len(morae)
+    
+    # Create accent pattern based on nucleus position
+    if accent_nucleus == 0:
+        # No accent nucleus: |*[****|
+        result = "|" + morae[0] + "[" + "".join(morae[1:]) + "|"
+    elif accent_nucleus == 1:
+        # Accent on first mora: |*]****|
+        result = "|" + morae[0] + "]" + "".join(morae[1:]) + "|"
+    elif accent_nucleus == 2:
+        # Accent on second mora: |*[*]***|
+        result = "|" + morae[0] + "[" + morae[1] + "]" + "".join(morae[2:]) + "|"
+    elif accent_nucleus <= mora_count:
+        # Accent nucleus at specified position: |*[***]*****|
+        # Pattern: first mora + [ + morae up to nucleus + ] + remaining morae
+        first_mora = morae[0]
+        nucleus_morae = morae[1:accent_nucleus]  # morae from 2nd to nucleus
+        after_nucleus = morae[accent_nucleus:]   # morae after nucleus
+        
+        result = "|" + first_mora + "[" + "".join(nucleus_morae) + "]" + "".join(after_nucleus) + "|"
+    else:
+        # Accent nucleus beyond mora count, treat as no accent
+        result = "|" + "".join(morae) + "|"
+    
+    return result
 
 
 def is_long_vowel(mora1: str, mora2: str) -> bool:
@@ -281,18 +354,17 @@ def extract_accent_info(text_with_accents: str) -> Tuple[str, List[Tuple[int, st
         Tuple of (clean_text, accent_positions)
         
     Example:
-        >>> extract_accent_info("こ́んにち̀は")
-        ("こんにちは", [(0, 'high'), (3, 'low')])
+        >>> extract_accent_info("こ[んにち]は")
+        ("こんにちは", [(0, 'rise'), (3, 'fall')])
     """
     clean_text = ""
     accent_positions = []
     position = 0
     
     accent_map = {
-        '́': 'high',   # Combining acute accent
-        '̀': 'low',    # Combining grave accent
-        '̂': 'fall',   # Combining circumflex
-        '̌': 'rise'    # Combining caron
+        '[': 'rise',     # Rising tone mark
+        ']': 'fall',     # Falling tone mark
+        '|': 'boundary'  # Accent phrase boundary
     }
     
     i = 0
@@ -301,8 +373,7 @@ def extract_accent_info(text_with_accents: str) -> Tuple[str, List[Tuple[int, st
         
         if char in accent_map:
             # This is an accent mark, record its position
-            if position > 0:  # Accent applies to previous character
-                accent_positions.append((position - 1, accent_map[char]))
+            accent_positions.append((position, accent_map[char]))
         else:
             # Regular character
             clean_text += char
@@ -311,27 +382,3 @@ def extract_accent_info(text_with_accents: str) -> Tuple[str, List[Tuple[int, st
         i += 1
     
     return clean_text, accent_positions
-
-
-def validate_accent_pattern(pattern: str) -> bool:
-    """
-    Validate accent pattern notation.
-    
-    Args:
-        pattern: Accent pattern string (e.g., "1H,3L")
-        
-    Returns:
-        True if pattern is valid, False otherwise
-        
-    Example:
-        >>> validate_accent_pattern("1H,3L")
-        True
-        >>> validate_accent_pattern("invalid")
-        False
-    """
-    if not pattern:
-        return True  # Empty pattern is valid
-    
-    # Pattern should be like "1H,3L,5F"
-    pattern_regex = r'^(\d+[HLFR])(,\d+[HLFR])*$'
-    return bool(re.match(pattern_regex, pattern.upper()))
